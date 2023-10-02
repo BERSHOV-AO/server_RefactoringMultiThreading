@@ -8,6 +8,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class Server {
+
+    private final int NUMBER_THREADS = 64;
     List<String> validPaths = List.of("/index.html", "/spring.svg", "/spring.png", "/resources.html",
             "/styles.css", "/app.js", "/links.html", "/forms.html", "/classic.html", "/events.html", "/events.js");
 
@@ -17,7 +19,7 @@ public class Server {
     public Server(int port) {
         try {
             serverSocket = new ServerSocket(port);
-            threadPool = Executors.newFixedThreadPool(64);
+            threadPool = Executors.newFixedThreadPool(NUMBER_THREADS);
             System.out.println("Веб-сервер запущен на порту " + port);
         } catch (IOException e) {
             e.printStackTrace();
