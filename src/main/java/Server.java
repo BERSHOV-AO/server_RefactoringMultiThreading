@@ -39,8 +39,12 @@ public class Server {
                 });
             }
         } catch (IOException e) {
+            // throw new RuntimeException(e);
             e.printStackTrace();
         }
+//        finally {
+//            threadPool.shutdown();
+//        }
     }
 
     private void handleConnection(Socket clientSocket) {
