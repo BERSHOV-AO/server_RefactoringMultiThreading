@@ -4,43 +4,44 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class Server {
 
+    private final String NOT_FOUND_CODE = "404";
+    private final String NOT_FOUND_TEXT = "Not Found";
     private final int NUMBER_THREADS = 64;
+    private final int PORT_SERVER_SOCKET;
     List<String> validPaths = List.of("/index.html", "/spring.svg", "/spring.png", "/resources.html",
             "/styles.css", "/app.js", "/links.html", "/forms.html", "/classic.html", "/events.html", "/events.js");
 
-    private ServerSocket serverSocket;
     private ExecutorService threadPool;
+    private ConcurrentHashMap<String, Map<String, Handler>> handlersStorageMap;
 
     public Server(int port) {
-        try {
-            serverSocket = new ServerSocket(port);
-            threadPool = Executors.newFixedThreadPool(NUMBER_THREADS);
-            System.out.println("Веб-сервер запущен на порту " + port);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+
+        PORT_SERVER_SOCKET = port;
+        threadPool = Executors.newFixedThreadPool(NUMBER_THREADS);
+        handlersStorageMap = new ConcurrentHashMap<>();
     }
 
     public void start() {
-        try {
-            while (true) {
+        try (final var serverSocket = new ServerSocket(PORT_SERVER_SOCKET)) {
+            System.out.println("Веб-сервер запущен на порту " + PORT_SERVER_SOCKET);
+            while (!serverSocket.isClosed()) {
                 Socket clientSocket = serverSocket.accept();
                 System.out.println("Подключение принято от клиента: " + clientSocket.getInetAddress().getHostAddress());
-
-                 threadPool.execute(() -> handleConnection(clientSocket));
+                threadPool.execute(() -> handleConnection(clientSocket));
             }
         } catch (IOException e) {
             // throw new RuntimeException(e);
             e.printStackTrace();
+        } finally {
+            threadPool.shutdown();
         }
-//        finally {
-//            threadPool.shutdown();
-//        }
     }
 
     private void handleConnection(Socket clientSocket) {
@@ -53,12 +54,21 @@ public class Server {
             final var parts = requestLine.split(" ");
 
             if (parts.length != 3) {
-
                 System.out.println("not path");
+                clientSocket.close();
                 return;
             }
 
+            String method = parts[0];
             final var path = parts[1];
+            Request request = createRequest(method, path);
+
+
+            // Проверяем наличие плохих запросов и разрываем соединение
+            if (request == null || handlersStorageMap.containsKey(request.getMethod())) {
+
+            }
+
             if (!validPaths.contains(path)) {
                 out.write((
                         "HTTP/1.1 404 Not Found\r\n" +
@@ -106,6 +116,25 @@ public class Server {
             System.out.println("Подключение закрыто для клиента: " + clientSocket.getInetAddress().getHostAddress());
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    public void outContentResponse(BufferedOutputStream out, String code, String status) throws IOException {
+        out.write((
+                "HTTP/1.1 " + code + " " + status + "\r\n" +
+                        "Content-Length: 0\r\n" +
+                        "Connection: close\r\n" +
+                        "\r\n"
+        ).getBytes());
+        out.flush();
+
+    }
+
+    private Request createRequest(String method, String path) {
+        if (method != null) {
+            return new Request(method, path);
+        } else {
+            return null;
         }
     }
 }
