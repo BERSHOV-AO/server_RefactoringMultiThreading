@@ -32,13 +32,7 @@ public class Server {
                 Socket clientSocket = serverSocket.accept();
                 System.out.println("Подключение принято от клиента: " + clientSocket.getInetAddress().getHostAddress());
 
-                // threadPool.execute(() -> handleConnection(clientSocket));
-                threadPool.execute(new Runnable() {
-                    @Override
-                    public void run() {
-                        handleConnection(clientSocket);
-                    }
-                });
+                 threadPool.execute(() -> handleConnection(clientSocket));
             }
         } catch (IOException e) {
             // throw new RuntimeException(e);
