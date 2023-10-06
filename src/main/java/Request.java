@@ -119,14 +119,6 @@ public class Request {
         return -1;
     }
 
-    public List<NameValuePair> getQueryParams() {
-        return paramsList;
-    }
-
-    public List<String> getHeaders() {
-        return headersList;
-    }
-
     public NameValuePair getQueryParam(String name) {
         return getQueryParams().stream()
                 .filter(param -> param.getName().equalsIgnoreCase(name))
@@ -142,4 +134,14 @@ public class Request {
                     }
                 });
     }
+
+    public List<NameValuePair> getQueryParams() {
+        return paramsList;
+    }
+
+    public List<String> getHeaders() {
+        return headersList;
+    }
+
+
 }

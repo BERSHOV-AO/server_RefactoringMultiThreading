@@ -44,53 +44,71 @@ public class Server {
             threadPool.shutdown();
         }
     }
-
-    private void handleConnection(Socket clientSocket) {
-        try (BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-             final var out = new BufferedOutputStream(clientSocket.getOutputStream())) {
-
-            final var requestLine = in.readLine();
-            System.out.println("Получен HTTP-запрос: " + requestLine);
-
-            final var parts = requestLine.split(" ");
-
-            if (parts.length != 3) {
-                System.out.println("not path");
-                clientSocket.close();
-                return;
-            }
-
-            String method = parts[0];
-            final var path = parts[1];
-            Request request = createRequest(method, path);
-
-
+    private void handleConnection(Socket clientSocket){
+        try (final var in = new BufferedInputStream(clientSocket.getInputStream());
+             final var out = new BufferedOutputStream(clientSocket.getOutputStream())
+        ) {
+            Request request = Request.createRequest(in);
             // Проверяем наличие плохих запросов и разрываем соединение
             if (request == null || !handlersStorageMap.containsKey(request.getMethod())) {
                 outContentResponse(out, NOT_FOUND_CODE, "Error Request");
                 return;
+            } else {
+
             }
 
-            // Получаем путь, MAP
-            Map<String, Handler> handlerMap = handlersStorageMap.get(request.getMethod());
-            String requestPath = request.getPath();
-            if (handlerMap.containsKey(requestPath)) {
-                Handler handler = handlerMap.get(requestPath);
-                handler.handle(request, out);
-            } else {
-                // не найден
-                if (!validPathsList.contains(request.getPath())) {
-                    outContentResponse(out, NOT_FOUND_CODE, NOT_FOUND_TEXT);
-                } else {
-                    // default
-                    System.out.println("default handler");
-                    defaultHandler(out, path);
-                }
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
         }
     }
+
+
+
+
+//    private void handleConnection(Socket clientSocket) {
+//        try (BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+//             final var out = new BufferedOutputStream(clientSocket.getOutputStream())) {
+//
+//            final var requestLine = in.readLine();
+//            System.out.println("Получен HTTP-запрос: " + requestLine);
+//
+//            final var parts = requestLine.split(" ");
+//
+//            if (parts.length != 3) {
+//                System.out.println("not path");
+//                clientSocket.close();
+//                return;
+//            }
+//
+//            String method = parts[0];
+//            final var path = parts[1];
+//            Request request = createRequest(method, path);
+//
+//
+//            // Проверяем наличие плохих запросов и разрываем соединение
+//            if (request == null || !handlersStorageMap.containsKey(request.getMethod())) {
+//                outContentResponse(out, NOT_FOUND_CODE, "Error Request");
+//                return;
+//            }
+//
+//            // Получаем путь, MAP
+//            Map<String, Handler> handlerMap = handlersStorageMap.get(request.getMethod());
+//            String requestPath = request.getPath();
+//            if (handlerMap.containsKey(requestPath)) {
+//                Handler handler = handlerMap.get(requestPath);
+//                handler.handle(request, out);
+//            } else {
+//                // не найден
+//                if (!validPathsList.contains(request.getPath())) {
+//                    outContentResponse(out, NOT_FOUND_CODE, NOT_FOUND_TEXT);
+//                } else {
+//                    // default
+//                    System.out.println("default handler");
+//                    defaultHandler(out, path);
+//                }
+//            }
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//    }
 
     void addHandler(String method, String path, Handler handler) {
         if (!handlersStorageMap.containsKey(method)) {
@@ -110,13 +128,28 @@ public class Server {
 
     }
 
-    private Request createRequest(String method, String path) {
-        if (method != null) {
-            return new Request(method, path);
-        } else {
-            return null;
+    private void showDebugRequest(Request request) {
+        System.out.println("==================================");
+        System.out.println("Show request: ");
+        System.out.println("Method - " + request.getMethod());
+        System.out.println("Path - " + request.getPath());
+        System.out.println("Headers - " + request.getHeaders());
+        System.out.println("==================================");
+        System.out.println("Query Params: ");
+        for (var para : request.getQueryParams()) {
+            System.out.println(para.getName() + " : " + para.getValue());
         }
     }
+
+
+
+//    private Request createRequest(String method, String path) {
+//        if (method != null) {
+//            return new Request(method, path);
+//        } else {
+//            return null;
+//        }
+//    }
 
     void defaultHandler(BufferedOutputStream out, String path) throws IOException {
         final var filePath = Path.of(".", "public", path);
