@@ -12,8 +12,8 @@ import java.util.concurrent.Executors;
 
 public class Server {
 
-    private final String NOT_FOUND_CODE = "404";
     private final String NOT_FOUND_TEXT = "Not Found";
+    private final String NOT_FOUND_CODE = "404";
     private final int NUMBER_THREADS = 64;
     private final int PORT_SERVER_SOCKET;
     List<String> validPathsList = List.of("/index.html", "/spring.svg", "/spring.png", "/resources.html",
