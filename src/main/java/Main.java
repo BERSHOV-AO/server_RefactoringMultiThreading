@@ -7,16 +7,16 @@ public class Main {
     public static void main(String[] args) {
         Server server = new Server(PORT_SERVER);
 
-        // добавление handler'ов (обработчиков)
+        // добавление обработчиков
         server.addHandler("GET", "/messages", (request, responseStream) -> {
             try {
-                server.outContentResponse(responseStream, "200", "OK");
+                server.outContentResponse(responseStream, "200", "OK!!!");
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         });
 
-        server.addHandler("POST", "/messages", (request, responseStream) -> server.outContentResponse(responseStream, "503", "Service Unavailable"));
+        server.addHandler("POST", "/messages", (request, responseStream) -> server.outContentResponse(responseStream, "502", "Bad Gateway!!!"));
 
         server.addHandler("GET", "/", ((request, outputStream) -> server.defaultHandler(outputStream, "index.html")));
 

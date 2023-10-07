@@ -1,5 +1,3 @@
-import org.apache.http.Header;
-
 import java.io.*;
 import java.net.*;
 import java.nio.file.Files;
@@ -97,25 +95,25 @@ public class Server {
                         "\r\n"
         ).getBytes());
         out.flush();
-
     }
 
     private void showDebugRequest(Request request) {
-        System.out.println("==================================");
+        System.out.println("**********************************");
         System.out.println("Show request: ");
         System.out.println("Method - " + request.getMethod());
         System.out.println("Path - " + request.getPath());
         System.out.println("Headers - " + request.getHeaders());
-        System.out.println("==================================");
+        System.out.println("-----------------------------------");
         System.out.println("Query Params: ");
         for (var para : request.getQueryParams()) {
             System.out.println(para.getName() + " : " + para.getValue());
         }
-        System.out.println("==================================");
-        System.out.println("name-value test:");
-        System.out.println(request.getQueryParam("Info").getValue());
+        System.out.println("-----------------------------------");
         System.out.println("name test:");
         System.out.println(request.getQueryParam("Duke").getName());
+        System.out.println("name-value test:");
+        System.out.println(request.getQueryParam("Info").getValue());
+        System.out.println("**********************************");
 
     }
 
