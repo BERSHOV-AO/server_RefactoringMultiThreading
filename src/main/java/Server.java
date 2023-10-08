@@ -12,8 +12,8 @@ import java.util.concurrent.Executors;
 
 public class Server {
 
-    private final String NOT_FOUND_CODE = "404";
     private final String NOT_FOUND_TEXT = "Not Found";
+    private final String NOT_FOUND_CODE = "404";
     private final int NUMBER_THREADS = 64;
     private final int PORT_SERVER_SOCKET;
     List<String> validPathsList = List.of("/index.html", "/spring.svg", "/spring.png", "/resources.html",
@@ -46,49 +46,37 @@ public class Server {
     }
 
     private void handleConnection(Socket clientSocket) {
-        try (BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-             final var out = new BufferedOutputStream(clientSocket.getOutputStream())) {
-
-            final var requestLine = in.readLine();
-            System.out.println("Получен HTTP-запрос: " + requestLine);
-
-            final var parts = requestLine.split(" ");
-
-            if (parts.length != 3) {
-                System.out.println("not path");
-                clientSocket.close();
-                return;
-            }
-
-            String method = parts[0];
-            final var path = parts[1];
-            Request request = createRequest(method, path);
-
-
+        try (final var in = new BufferedInputStream(clientSocket.getInputStream());
+             final var out = new BufferedOutputStream(clientSocket.getOutputStream())
+        ) {
+            Request request = Request.createRequest(in);
             // Проверяем наличие плохих запросов и разрываем соединение
             if (request == null || !handlersStorageMap.containsKey(request.getMethod())) {
                 outContentResponse(out, NOT_FOUND_CODE, "Error Request");
                 return;
+            } else {
+                // Печатаем инфорацию по нашему запросу
+                showDebugRequest(request);
             }
 
             // Получаем путь, MAP
             Map<String, Handler> handlerMap = handlersStorageMap.get(request.getMethod());
-            String requestPath = request.getPath();
+            String requestPath = request.getPath().split("\\?")[0];
             if (handlerMap.containsKey(requestPath)) {
                 Handler handler = handlerMap.get(requestPath);
                 handler.handle(request, out);
             } else {
                 // не найден
-                if (!validPathsList.contains(request.getPath())) {
+                if (!validPathsList.contains(requestPath)) {
                     outContentResponse(out, NOT_FOUND_CODE, NOT_FOUND_TEXT);
                 } else {
                     // default
-                    System.out.println("default handler");
-                    defaultHandler(out, path);
+                    defaultHandler(out, requestPath);
                 }
             }
-        } catch (IOException e) {
-            e.printStackTrace();
+
+        } catch (IOException | URISyntaxException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -107,15 +95,26 @@ public class Server {
                         "\r\n"
         ).getBytes());
         out.flush();
-
     }
 
-    private Request createRequest(String method, String path) {
-        if (method != null) {
-            return new Request(method, path);
-        } else {
-            return null;
+    private void showDebugRequest(Request request) {
+        System.out.println("**********************************");
+        System.out.println("Show request: ");
+        System.out.println("Method - " + request.getMethod());
+        System.out.println("Path - " + request.getPath());
+        System.out.println("Headers - " + request.getHeaders());
+        System.out.println("-----------------------------------");
+        System.out.println("Query Params: ");
+        for (var para : request.getQueryParams()) {
+            System.out.println(para.getName() + " : " + para.getValue());
         }
+        System.out.println("-----------------------------------");
+        System.out.println("name test:");
+        System.out.println(request.getQueryParam("Duke").getName());
+        System.out.println("name-value test:");
+        System.out.println(request.getQueryParam("Info").getValue());
+        System.out.println("**********************************");
+
     }
 
     void defaultHandler(BufferedOutputStream out, String path) throws IOException {
